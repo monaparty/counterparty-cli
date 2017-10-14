@@ -220,7 +220,7 @@ def after_py2exe_build(win_dist_dir):
 # Download bootstrap database
 def bootstrap(overwrite=True, ask_confirmation=False):
     if ask_confirmation:
-        question = 'Would you like to bootstrap your local Counterparty database from `https://s3.amazonaws.com/counterparty-bootstrap/`? (y/N): '
+        question = 'Would you like to bootstrap your local Counterparty database from `https://monaparty.blob.core.windows.net/bootstrap/`? (y/N): '
         if input(question).lower() != 'y':
             return
     util.bootstrap(testnet=False)

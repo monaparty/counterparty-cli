@@ -120,12 +120,12 @@ def bootstrap(testnet=False, overwrite=True, ask_confirmation=False, quiet=False
 
     # Set Constants.
     if testnet:
-        BOOTSTRAP_URL = 'https://s3.amazonaws.com/counterparty-bootstrap/counterparty-db-testnet.latest.tar.gz'
-        TARBALL_PATH = os.path.join(tempfile.gettempdir(), 'counterpartyd-testnet-db.latest.tar.gz')
+        BOOTSTRAP_URL = 'https://monaparty.blob.core.windows.net/bootstrap/monaparty-testnet-db.latest.tar.gz'
+        TARBALL_PATH = os.path.join(tempfile.gettempdir(), 'monaparty-testnet.db.latest.tar.gz')
         DATABASE_PATH = os.path.join(data_dir, '{}.testnet.db'.format(config.APP_NAME))
     else:
-        BOOTSTRAP_URL = 'https://s3.amazonaws.com/counterparty-bootstrap/counterparty-db.latest.tar.gz'
-        TARBALL_PATH = os.path.join(tempfile.gettempdir(), 'counterpartyd-db.latest.tar.gz')
+        BOOTSTRAP_URL = 'https://monaparty.blob.core.windows.net/bootstrap/monaparty-db.latest.tar.gz'
+        TARBALL_PATH = os.path.join(tempfile.gettempdir(), 'monaparty-db.latest.tar.gz')
         DATABASE_PATH = os.path.join(data_dir, '{}.db'.format(config.APP_NAME))
 
     # Prepare Directory.
