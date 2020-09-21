@@ -16,6 +16,8 @@ import bitcoin as bitcoinlib
 
 MESSAGE_PARAMS = {
     'send': ['source', 'destination', 'asset', 'quantity', 'memo', 'memo_is_hex', 'use_enhanced_send'],
+    'sweep': ['source', 'destination', 'flags', 'memo'],
+    'dispenser': ['source', 'asset', 'give_quantity', 'mainchainrate', 'escrow_quantity', 'status'],
     'order': ['source', 'give_asset', 'give_quantity', 'get_asset', 'get_quantity', 'expiration', 'fee_required', 'fee_provided'],
     'btcpay': ['source', 'order_match_id'],
     'issuance': ['source', 'asset', 'quantity', 'divisible', 'description', 'transfer_destination'],
@@ -126,7 +128,7 @@ def prepare_args(args, action):
     args.regular_dust_size = int(args.regular_dust_size * config.UNIT)
     args.multisig_dust_size = int(args.multisig_dust_size * config.UNIT)
     args.op_return_value = int(args.op_return_value * config.UNIT)
-    
+
     # common
     if args.fee:
         args.fee = util.value_in(args.fee, config.BTC)
@@ -134,6 +136,17 @@ def prepare_args(args, action):
     # send
     if action == 'send':
         args.quantity = util.value_in(args.quantity, args.asset)
+
+    # sweep
+    if action == 'sweep':
+        args.flags = int(args.flags)
+
+    # dispenser
+    if action == 'dispenser':
+        args.status = int(args.status)
+        args.give_quantity = util.value_in(args.give_quantity, args.asset)
+        args.escrow_quantity = util.value_in(args.escrow_quantity, args.asset)
+        args.mainchainrate = util.value_in(args.mainchainrate, config.BTC)
 
     # order
     if action == 'order':
@@ -192,7 +205,7 @@ def prepare_args(args, action):
 
     # destroy
     if action == 'destroy':
-        args.quantity = util.value_in(args.quantity, args.asset, 'input')
+        args.quantity = util.value_in(args.quantity, args.asset)
 
     # RPS
     if action == 'rps':
@@ -221,7 +234,7 @@ def extract_args(args, keys):
 def get_input_value(tx_hex):
     unspents = wallet.list_unspent()
     ctx = bitcoinlib.core.CTransaction.deserialize(binascii.unhexlify(tx_hex))
-    
+
     inputs_value = 0
     for vin in ctx.vin:
         vin_tx_hash = ib2h(vin.prevout.hash)
@@ -255,7 +268,7 @@ def compose_transaction(args, message_name, param_names):
     common_params = common_args(args)
     params = extract_args(args, param_names)
     params.update(common_params)
-    
+
     # Get provided pubkeys from params.
     pubkeys = []
     for address_name in ['source', 'destination']:
@@ -267,7 +280,7 @@ def compose_transaction(args, message_name, param_names):
 
     method = 'create_{}'.format(message_name)
     unsigned_tx_hex = util.api(method, params)
-    
+
     # check_transaction(method, params, unsigned_tx_hex)
 
     return unsigned_tx_hex
