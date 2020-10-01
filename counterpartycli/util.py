@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 D = decimal.Decimal
 
 from counterpartylib import server
-from counterpartylib.lib import config
+from counterpartylib.lib import config, check
 from counterpartylib.lib.util import value_input, value_output
 
 rpc_sessions = {}
