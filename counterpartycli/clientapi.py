@@ -1,5 +1,6 @@
 import sys
 import logging
+import binascii
 from urllib.parse import quote_plus as urlencode
 
 from counterpartylib.lib import config, script
@@ -15,11 +16,11 @@ DEFAULT_REQUESTS_TIMEOUT = 5 # seconds
 class ConfigurationError(Exception):
     pass
 
-def initialize(testnet=False, testcoin=False,
-                counterparty_rpc_connect=None, counterparty_rpc_port=None, 
+def initialize(testnet=False, testcoin=False, regtest=True, customnet="",
+                counterparty_rpc_connect=None, counterparty_rpc_port=None,
                 counterparty_rpc_user=None, counterparty_rpc_password=None,
                 counterparty_rpc_ssl=False, counterparty_rpc_ssl_verify=False,
-                wallet_name=None, wallet_connect=None, wallet_port=None, 
+                wallet_name=None, wallet_connect=None, wallet_port=None,
                 wallet_user=None, wallet_password=None,
                 wallet_ssl=False, wallet_ssl_verify=False,
                 requests_timeout=DEFAULT_REQUESTS_TIMEOUT):
@@ -30,6 +31,14 @@ def initialize(testnet=False, testcoin=False,
 
     # testnet
     config.TESTNET = testnet or False
+
+    config.REGTEST = regtest or False
+
+    if len(customnet) > 0:
+        config.CUSTOMNET = True
+        config.REGTEST = True
+    else:
+        config.CUSTOMNET = False
 
     # testcoin
     config.TESTCOIN = testcoin or False
@@ -46,6 +55,10 @@ def initialize(testnet=False, testcoin=False,
     else:
         if config.TESTNET:
             config.COUNTERPARTY_RPC_PORT = config.DEFAULT_RPC_PORT_TESTNET
+        elif config.CUSTOMNET:
+            config.COUNTERPARTY_RPC_PORT = config.DEFAULT_RPC_PORT_REGTEST
+        elif config.REGTEST:
+            config.COUNTERPARTY_RPC_PORT = config.DEFAULT_RPC_PORT_REGTEST
         else:
             config.COUNTERPARTY_RPC_PORT = config.DEFAULT_RPC_PORT
     try:
@@ -92,6 +105,10 @@ def initialize(testnet=False, testcoin=False,
     else:
         if config.TESTNET:
             config.WALLET_PORT = config.DEFAULT_BACKEND_PORT_TESTNET
+        elif config.CUSTOMNET:
+            config.WALLET_PORT = config.DEFAULT_BACKEND_PORT_REGTEST
+        elif config.REGTEST:
+            config.WALLET_PORT = config.DEFAULT_BACKEND_PORT_REGTEST
         else:
             config.WALLET_PORT = config.DEFAULT_BACKEND_PORT
     try:
@@ -148,6 +165,35 @@ def initialize(testnet=False, testcoin=False,
             config.BURN_START = config.BURN_START_TESTNET
             config.BURN_END = config.BURN_END_TESTNET
             config.UNSPENDABLE = config.UNSPENDABLE_TESTNET
+    elif config.CUSTOMNET:
+        custom_args = customnet.split('|')
+
+        if len(custom_args) == 3:
+            config.MAGIC_BYTES = config.MAGIC_BYTES_REGTEST
+            config.ADDRESSVERSION = binascii.unhexlify(custom_args[1])
+            config.P2SH_ADDRESSVERSION = binascii.unhexlify(custom_args[2])
+            config.BLOCK_FIRST = config.BLOCK_FIRST_REGTEST
+            config.BURN_START = config.BURN_START_REGTEST
+            config.BURN_END = config.BURN_END_REGTEST
+            config.UNSPENDABLE = custom_args[0]
+        else:
+            raise "Custom net parameter needs to be like UNSPENDABLE_ADDRESS|ADDRESSVERSION|P2SH_ADDRESSVERSION (version bytes in HH format)"
+    elif config.REGTEST:
+        config.MAGIC_BYTES = config.MAGIC_BYTES_REGTEST
+        if config.TESTCOIN:
+            config.ADDRESSVERSION = config.ADDRESSVERSION_REGTEST
+            config.P2SH_ADDRESSVERSION = config.P2SH_ADDRESSVERSION_REGTEST
+            config.BLOCK_FIRST = config.BLOCK_FIRST_REGTEST_TESTCOIN
+            config.BURN_START = config.BURN_START_REGTEST_TESTCOIN
+            config.BURN_END = config.BURN_END_REGTEST_TESTCOIN
+            config.UNSPENDABLE = config.UNSPENDABLE_REGTEST
+        else:
+            config.ADDRESSVERSION = config.ADDRESSVERSION_REGTEST
+            config.P2SH_ADDRESSVERSION = config.P2SH_ADDRESSVERSION_REGTEST
+            config.BLOCK_FIRST = config.BLOCK_FIRST_REGTEST
+            config.BURN_START = config.BURN_START_REGTEST
+            config.BURN_END = config.BURN_END_REGTEST
+            config.UNSPENDABLE = config.UNSPENDABLE_REGTEST
     else:
         config.MAGIC_BYTES = config.MAGIC_BYTES_MAINNET
         if config.TESTCOIN:
@@ -166,9 +212,10 @@ def initialize(testnet=False, testcoin=False,
             config.UNSPENDABLE = config.UNSPENDABLE_MAINNET
 
 WALLET_METHODS = [
-    'get_wallet_addresses', 'get_btc_balances', 'sign_raw_transaction', 
+    'get_wallet_addresses', 'get_btc_balances', 'sign_raw_transaction',
     'get_pubkey', 'is_valid', 'is_mine', 'get_btc_balance', 'send_raw_transaction',
-    'wallet', 'asset', 'balances', 'pending', 'is_locked', 'unlock', 'wallet_last_block'
+    'wallet', 'asset', 'balances', 'pending', 'is_locked', 'unlock', 'wallet_last_block',
+    'sweep'
 ]
 
 def call(method, args, pubkey_resolver=None):
@@ -180,7 +227,7 @@ def call(method, args, pubkey_resolver=None):
 
         import counterpartycli.clientapi
         clientapi.initialize(...)
-        unsigned_hex = clientapi.call('create_send', {...}) 
+        unsigned_hex = clientapi.call('create_send', {...})
         signed_hex =  clientapi.call('sign_raw_transaction', unsigned_hex)
         tx_hash = clientapi.call('send_raw_transaction', signed_hex)
     """
