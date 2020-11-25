@@ -154,22 +154,27 @@ def main():
 
     # PARSING
     if args.action == 'reparse':
-        server.reparse(db)
+        with db:
+            server.reparse(db)
 
     elif args.action == 'rollback':
-        server.reparse(db, block_index=args.block_index)
+        with db:
+            server.reparse(db, block_index=args.block_index)
 
     elif args.action == 'kickstart':
-        server.kickstart(db, bitcoind_dir=args.bitcoind_dir)
+        with db:
+            server.kickstart(db, bitcoind_dir=args.bitcoind_dir)
 
     elif args.action == 'start':
-        server.start_all(db)
+        with db:
+            server.start_all(db)
 
     elif args.action == 'debug_config':
         server.debug_config()
 
     elif args.action == 'vacuum':
-        server.vacuum(db)
+        with db:
+            server.vacuum(db)
 
     else:
         parser.print_help()
